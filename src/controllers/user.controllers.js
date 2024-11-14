@@ -7,6 +7,7 @@ import {
 } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const generateAccessAndRefreshToken = async (userId) => {
   try {
@@ -91,7 +92,6 @@ const registerUser = asyncHandler(async (req, res) => {
 
 const loginUser = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
-
   if (!email) {
     throw new ApiError(400, "Email is required");
   }
@@ -253,13 +253,14 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 });
 
 const updateUserAvatar = asyncHandler(async (req, res) => {
-  const avatarLocalPath = req.files?.path;
+  const avatarLocalPath = req.file?.path;
+  console.log(avatarLocalPath);
   if (!avatarLocalPath) {
     throw new ApiError(400, "File is required");
   }
 
   const avatar = await uploadOnCloudinary(avatarLocalPath);
-  if (!avatar.url) {
+  if (!avatar?.url) {
     throw new ApiError(500, "Something went wrong while uploading avatar");
   }
 
@@ -285,8 +286,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   }
 
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
-
-  if (!coverImage.url) {
+  if (!coverImage?.url) {
     throw new ApiError(500, "Something went wrong while uploading cover image");
   }
 
@@ -320,7 +320,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     {
       $lookup: {
         from: "subscriptions",
-        localField: _id,
+        localField: "_id",
         foreignField: "channel",
         as: "subscribers",
       },
@@ -344,11 +344,9 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 
         isSubscribed: {
           $cond: {
-            if: {
-              $in: [req.user?._id, "$subscribers.subscriber"],
-              then: true,
-              else: false,
-            },
+            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            then: true,
+            else: false,
           },
         },
       },
@@ -423,7 +421,7 @@ const getWatchHistory = asyncHandler(async (req, res, next) => {
 
   return res
     .status(200)
-    .json(200, user[0], "Watch history fetched successfully");
+    .json(new ApiResponse(200, user[0], "Watch history fetched successfully"));
 });
 
 export {
