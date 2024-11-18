@@ -82,8 +82,12 @@ const updateVideo = asyncHandler(async (req, res) => {
     if (!videoId) {
       throw new ApiError(500, "video id cant be null");
     }
+    const currentUser = new mongoose.Types.ObjectId(req.user._id);
+    const video = await Video.findOne({
+      _id: videoId,
+      owner: currentUser,
+    });
 
-    const video = await Video.findById(videoId);
     if (!video) {
       throw new ApiError(500, "video not found");
     }
@@ -92,6 +96,10 @@ const updateVideo = asyncHandler(async (req, res) => {
     if (thumbnail) {
       try {
         newThumbnail = await uploadOnCloudinary(thumbnail);
+        const parts = thumbnail.split("/");
+        const fileNameWithExtension = parts[parts.length - 1];
+        const publicId = fileNameWithExtension.split(".")[0];
+        await cloudinary.uploader.destroy(publicId);
         video.thumbnail = newThumbnail.url;
       } catch (err) {
         throw new ApiError(500, "unable to upload thumbnail");
@@ -110,18 +118,55 @@ const updateVideo = asyncHandler(async (req, res) => {
         new ApiResponse(200, updatedVideo, "Video details updated successfully")
       );
   } catch (err) {
-    console.log(err);
     throw new ApiError(500, "unable to update video");
   }
 });
 
 const deleteVideo = asyncHandler(async (req, res) => {
-  const { videoId } = req.params;
-  //TODO: delete video
+  try {
+    const { videoId } = req.params;
+    if (!videoId) {
+      throw new ApiError(500, "video id cant be null");
+    }
+
+    const currentUser = new mongoose.Types.ObjectId(req.user._id);
+    const video = await Video.findOneAndDelete({
+      _id: videoId,
+      owner: currentUser,
+    });
+    //Todo delete older assets
+    if (!video) {
+      throw new ApiError(500, "video not found");
+    }
+    res.status(200).json(new ApiResponse(200, {}, "Video removed"));
+  } catch (err) {
+    throw new ApiError(500, "Unable to delete video");
+  }
 });
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
-  const { videoId } = req.params;
+  try {
+    const { videoId } = req.params;
+    if (!videoId) {
+      throw new ApiError(500, "video id cant be null");
+    }
+
+    const currentUser = new mongoose.Types.ObjectId(req.user._id);
+    let video = await Video.findOne({
+      _id: videoId,
+      owner: currentUser,
+    });
+    if (!video) {
+      throw new ApiError(500, "video published status cant be changed");
+    }
+    video.isPublished = !video.isPublished;
+    video = await video.save();
+    console.log(video);
+    res.status(200).json(new ApiResponse(200, video, "Video status changed"));
+  } catch (err) {
+    console.log(err);
+    throw new ApiError(500, "Unable to update video status");
+  }
 });
 
 export {
