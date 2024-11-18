@@ -76,20 +76,42 @@ const getVideoById = asyncHandler(async (req, res) => {
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
-  const { videoId } = req.params;
-  const { title, description } = req.body;
-  if (!videoId) {
-    throw new ApiError(500, "video id cant be null");
-  }
+  try {
+    const { videoId } = req.params;
+    const { title, description } = req.body;
+    if (!videoId) {
+      throw new ApiError(500, "video id cant be null");
+    }
 
-  const video = Video.findById(videoId);
-  if (!video) {
-    throw new ApiError(500, "video not found");
-  }
-  let thumbnail = req.file?.path;
-  let newThumbnail = "";
-  if (thumbnail) {
-    newThumbnail = await uploadOnCloudinary(thumbnail);
+    const video = await Video.findById(videoId);
+    if (!video) {
+      throw new ApiError(500, "video not found");
+    }
+    let thumbnail = req.file?.path;
+    let newThumbnail = "";
+    if (thumbnail) {
+      try {
+        newThumbnail = await uploadOnCloudinary(thumbnail);
+        video.thumbnail = newThumbnail.url;
+      } catch (err) {
+        throw new ApiError(500, "unable to upload thumbnail");
+      }
+    }
+    if (title) {
+      video.title = title;
+    }
+    if (description) {
+      video.description = description;
+    }
+    let updatedVideo = await video.save({ new: true });
+    res
+      .status(200)
+      .json(
+        new ApiResponse(200, updatedVideo, "Video details updated successfully")
+      );
+  } catch (err) {
+    console.log(err);
+    throw new ApiError(500, "unable to update video");
   }
 });
 
