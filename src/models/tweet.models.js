@@ -1,5 +1,4 @@
 import mongoose, { Schema } from "mongoose";
-var aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 const tweetSchema = new Schema(
   {
     content: {
