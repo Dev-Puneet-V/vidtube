@@ -35,6 +35,11 @@ const videoSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
+    type: {
+      type: String,
+      enum: ["funny", "random"],
+      default: "random",
+    },
   },
   { timestamps: true }
 );

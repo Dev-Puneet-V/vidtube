@@ -11,8 +11,44 @@ import {
 } from "../utils/cloudinary.js";
 
 const getAllVideos = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
-  //TODO: get all videos based on query, sort, pagination
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      query = "random",
+      sortType = "descending",
+      userId,
+    } = req.query;
+    const videoType = ["funny", "random"];
+    if (!videoType.includes(query)) {
+      throw new ApiError(500, "Invalid query, select from funny or random");
+    }
+    if (!["descending", "ascending"].includes(sortType)) {
+      throw new ApiError(500, "Invalid sorting technique");
+    }
+    const skip = (+page - 1) * +limit;
+    const videos = await Video.aggregate([
+      {
+        $match: {
+          owner: new mongoose.Types.ObjectId(userId),
+          type: query,
+        },
+      },
+      {
+        $sort: {
+          createdAt: sortType === "descending" ? -1 : 1,
+        },
+      },
+      { $limit: skip + +limit },
+      { $skip: skip },
+    ]);
+    res
+      .status(200)
+      .json(new ApiResponse(200, videos, "Videos fetched successfully"));
+  } catch (error) {
+    console.log(error);
+    throw new ApiError(500, "Unable to fetch videos");
+  }
 });
 
 const publishAVideo = asyncHandler(async (req, res) => {
