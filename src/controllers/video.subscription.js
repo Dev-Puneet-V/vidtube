@@ -6,6 +6,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {
   deleteFromCloudinary,
+  getPublicIdFromUrl,
   uploadOnCloudinary,
 } from "../utils/cloudinary.js";
 
@@ -130,13 +131,22 @@ const deleteVideo = asyncHandler(async (req, res) => {
     }
 
     const currentUser = new mongoose.Types.ObjectId(req.user._id);
-    const video = await Video.findOneAndDelete({
+    const video = await Video.findOne({
       _id: videoId,
       owner: currentUser,
     });
-    //Todo delete older assets
     if (!video) {
       throw new ApiError(500, "video not found");
+    }
+    const thumbnailUrl = video?.thumbnail;
+    const videoUrl = video?.videoFile;
+    if (thumbnailUrl) {
+      const publicId = getPublicIdFromUrl(thumbnailUrl);
+      await deleteFromCloudinary(publicId);
+    }
+    if (videoUrl) {
+      const publicId = getPublicIdFromUrl(videoUrl);
+      await deleteFromCloudinary(publicId);
     }
     res.status(200).json(new ApiResponse(200, {}, "Video removed"));
   } catch (err) {
@@ -161,7 +171,6 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     }
     video.isPublished = !video.isPublished;
     video = await video.save();
-    console.log(video);
     res.status(200).json(new ApiResponse(200, video, "Video status changed"));
   } catch (err) {
     console.log(err);

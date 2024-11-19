@@ -34,3 +34,14 @@ export const deleteFromCloudinary = async (publicId) => {
     return null;
   }
 };
+
+export const getPublicIdFromUrl = async (url) => {
+  try {
+    const parts = url.split("/");
+    const fileNameWithExtension = parts[parts.length - 1];
+    const publicId = fileNameWithExtension.split(".")[0];
+    return publicId;
+  } catch (error) {
+    return null;
+  }
+};
