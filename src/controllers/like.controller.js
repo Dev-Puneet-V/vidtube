@@ -38,8 +38,42 @@ const toggleLike = asyncHandler(async (req, res) => {
   }
 });
 
-const getLikedVideos = asyncHandler(async (req, res) => {
-  //TODO: get all liked videos
+const getLikedContent = asyncHandler(async (req, res) => {
+  try {
+    const { page = 1, limit = 10, type } = req.query;
+    if (!["Video", "Comment", "Tweet"].includes(type)) {
+      throw new ApiError(500, "Invalid content type");
+    }
+    let skip = (page - 1) * limit;
+    const likes = await Like.aggregate([
+      {
+        $match: {
+          user: new mongoose.Types.ObjectId(req.user._id),
+          targetType: type,
+        },
+      },
+      {
+        //this is a good query, took help from chatgpt
+        $lookup: {
+          from: type.toLowerCase() + "s",
+          localField: "targetId",
+          foreignField: "_id",
+          as: "targetData",
+        },
+      },
+    //   unwind because there will be only 1 targetData at a time, so dont need array
+      { $unwind: "$targetData" },
+      { $limit: skip + +limit },
+      { $skip: skip },
+    ]);
+    console.log(likes);
+    res
+      .status(200)
+      .json(new ApiResponse(200, likes, "Successfully fetched likes"));
+  } catch (error) {
+    console.log(error);
+    throw new ApiError(500, "Error in fetching liked content");
+  }
 });
 
-export { toggleLike, getLikedVideos };
+export { toggleLike, getLikedContent };
