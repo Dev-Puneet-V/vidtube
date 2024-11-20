@@ -10,16 +10,19 @@ const commentSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
-    video: {
+    parent: {
       type: Schema.Types.ObjectId,
       required: true,
-      ref: "Video",
+    },
+    parentType: {
+      type: String,
+      enum: ["Video", "Comment", "Tweet"],
+      required: true,
     },
   },
   {
     timestamps: true,
   }
 );
-
 
 export const Comment = mongoose.model("Comment", commentSchema);
