@@ -73,7 +73,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
                     {
                       sharedUsers: {
                         $elemMatch: {
-                          $eq: new mongoose.Types.ObjectId(userId),
+                          $eq: new mongoose.Types.ObjectId(req.user._id),
                         },
                       },
                     },
@@ -87,7 +87,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
     ]);
     res
       .status(200)
-      .json(new ApiResponse(200, playlists, "Playslists fetched successfully"));
+      .json(new ApiResponse(200, playlists, "Playlists fetched successfully"));
   } catch (error) {
     throw new ApiError(500, "Error fetching playlists");
   }
