@@ -4,6 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Video } from "../models/video.models.js";
+import { User } from "../models/user.models.js";
 
 const createPlaylist = asyncHandler(async (req, res) => {
   try {
@@ -128,6 +129,58 @@ const togglePlaylistPrivacy = asyncHandler(async (req, res) => {
   }
 });
 
+// add or remove users from urs playlist
+const toogleUserFromPlaylist = asyncHandler(async (req, res) => {
+  try {
+    const { playlistId, userId } = req.params;
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new ApiError(500, "User not found");
+    }
+    //complex query, took help from chat gpt
+    const playlist = await Playlist.findOneAndUpdate(
+      {
+        _id: new mongoose.Types.ObjectId(playlistId),
+        owner: new mongoose.Types.ObjectId(req.user._id),
+      },
+      [
+        {
+          $set: {
+            sharedUsers: {
+              $cond: {
+                if: {
+                  $in: [new mongoose.Types.ObjectId(userId), "$sharedUsers"],
+                },
+                then: {
+                  $filter: {
+                    input: "$sharedUsers",
+                    as: "user",
+                    cond: {
+                      $ne: ["$$user", new mongoose.Types.ObjectId(userId)],
+                    }, // Remove user if exists
+                  },
+                },
+                else: {
+                  $concatArrays: [
+                    "$sharedUsers", // Keep the existing sharedUsers
+                    [new mongoose.Types.ObjectId(userId)], // Add the new user if they don't exist
+                  ],
+                },
+              },
+            },
+          },
+        },
+      ],
+      { new: true }
+    );
+
+    res.status(200).json(new ApiResponse(200, playlist, "Shared user updated"));
+  } catch (error) {
+    console.log(error);
+    throw new ApiError(500, "Error handling user from playlist");
+  }
+});
+
 const getPlaylistById = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
   //TODO: get playlist by id
@@ -184,4 +237,5 @@ export {
   deletePlaylist,
   updatePlaylist,
   togglePlaylistPrivacy,
+  toogleUserFromPlaylist,
 };
