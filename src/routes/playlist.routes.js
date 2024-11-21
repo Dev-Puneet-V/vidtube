@@ -28,3 +28,9 @@ router.route("/remove/:videoId/:playlistId").patch(removeVideoFromPlaylist);
 router.route("/user/:userId").get(getUserPlaylists);
 
 export default router;
+
+//
+// private : 673ea8c6cc8330670798447c user: 67369c258becb9b8a0a908ab
+// public : 673ebe0c1d72d2e2003d8f1a user: 67369c258becb9b8a0a908ab
+// public : 673ebf08d24d57eebd45e9f4 user: 67369cb88becb9b8a0a908af
+// private : 673ebf5e5b56ff5685b21b5f user: 67369cb88becb9b8a0a908af

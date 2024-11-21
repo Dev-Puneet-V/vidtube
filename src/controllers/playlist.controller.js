@@ -33,8 +33,63 @@ const createPlaylist = asyncHandler(async (req, res) => {
 });
 
 const getUserPlaylists = asyncHandler(async (req, res) => {
-  const { userId } = req.params;
-  //TODO: get user playlists
+  try {
+    const { userId } = req.params;
+    //if public then anyone can see, if private then only owner and sharedusers can see
+    //Took time to write this query
+    const playlists = await Playlist.aggregate([
+      {
+        $match: {
+          //playlist = private then allow owner or shared users to view playlist
+          $or: [
+            {
+              $and: [
+                {
+                  privacy: "Public",
+                },
+                {
+                  owner: new mongoose.Types.ObjectId(userId),
+                },
+              ],
+            },
+            {
+              $and: [
+                {
+                  privacy: "Private",
+                },
+                {
+                  $or: [
+                    {
+                      $and: [
+                        {
+                          owner: new mongoose.Types.ObjectId(req.user._id),
+                        },
+                        {
+                          owner: new mongoose.Types.ObjectId(userId),
+                        },
+                      ],
+                    },
+                    {
+                      sharedUsers: {
+                        $elemMatch: {
+                          $eq: new mongoose.Types.ObjectId(userId),
+                        },
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    ]);
+    res
+      .status(200)
+      .json(new ApiResponse(200, playlists, "Playslists fetched successfully"));
+  } catch (error) {
+    throw new ApiError(500, "Error fetching playlists");
+  }
 });
 
 const getPlaylistById = asyncHandler(async (req, res) => {
