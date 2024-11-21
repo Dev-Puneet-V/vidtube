@@ -20,6 +20,20 @@ const playlistSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
+    sharedUsers: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    privacy: {
+      type: String,
+      enum: ["Private", "Public"],
+    },
+    views: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
