@@ -92,6 +92,42 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
   }
 });
 
+const togglePlaylistPrivacy = asyncHandler(async (req, res) => {
+  try {
+    const { playlistId } = req.params;
+    const { privacy } = req.body;
+    const loggedInUser = new mongoose.Types.ObjectId(req.user._id);
+    if (!["Private", "Public"].includes(privacy)) {
+      throw new ApiError(500, "Privacy of playlist can only be Public/Private");
+    }
+    const oldPlaylist = await Playlist.findOneAndUpdate(
+      {
+        _id: new mongoose.Types.ObjectId(playlistId),
+        owner: loggedInUser,
+      },
+      {
+        privacy,
+      }
+    );
+    if (!updatePlaylist) {
+      throw new ApiError(404, "Playlist not found");
+    }
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          {},
+          privacy === oldPlaylist?.privacy
+            ? "Playlist already " + privacy.toUpperCase()
+            : "Playlist updated successfully to " + privacy.toUpperCase()
+        )
+      );
+  } catch (error) {
+    throw new ApiError(500, "Error changing privacy of playlist");
+  }
+});
+
 const getPlaylistById = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
   //TODO: get playlist by id
@@ -147,4 +183,5 @@ export {
   removeVideoFromPlaylist,
   deletePlaylist,
   updatePlaylist,
+  togglePlaylistPrivacy,
 };

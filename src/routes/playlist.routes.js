@@ -6,9 +6,11 @@ import {
   getPlaylistById,
   getUserPlaylists,
   removeVideoFromPlaylist,
+  togglePlaylistPrivacy,
   updatePlaylist,
 } from "../controllers/playlist.controller.js";
 import { verifyJWT } from "../middlewares/auth.middlewares.js";
+import { toggleLike } from "../controllers/like.controller.js";
 
 const router = Router();
 
@@ -24,12 +26,11 @@ router
 
 router.route("/add/:videoId/:playlistId").patch(addVideoToPlaylist);
 router.route("/remove/:videoId/:playlistId").patch(removeVideoFromPlaylist);
-
+router.route("/toogle/p/:playlistId").patch(togglePlaylistPrivacy);
 router.route("/user/:userId").get(getUserPlaylists);
 
 export default router;
 
-//
 // private : 673ea8c6cc8330670798447c user: 67369c258becb9b8a0a908ab
 // public : 673ebe0c1d72d2e2003d8f1a user: 67369c258becb9b8a0a908ab
 // public : 673ebf08d24d57eebd45e9f4 user: 67369cb88becb9b8a0a908af
